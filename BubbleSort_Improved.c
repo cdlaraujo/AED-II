@@ -1,5 +1,7 @@
+#include <stdio.h>
+
 void bubble_sort(int arr[], int n) {
-    int i, j;
+    int i, j, comp = 0, troca = 0;
     int swapped;
     
     for (i = 0; i < n - 1; i++) {
@@ -13,6 +15,8 @@ void bubble_sort(int arr[], int n) {
                 int temp = arr[j];
                 arr[j] = arr[j + 1];
                 arr[j + 1] = temp;
+                comp++;
+                troca++;
                 swapped = 1;
             }
         }
