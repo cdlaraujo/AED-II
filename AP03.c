@@ -2,6 +2,22 @@
 #include <stdlib.h>
 #include <limits.h>
 
+/*Helper functions*/
+
+// Swap function to swap two integers
+void swap(int* a, int* b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Function to copy arrays
+void copy_arrays(int array[], int copy[], int size) {
+    for (int i = 0; i < size; i++) {
+        copy[i] = array[i];
+    }
+}
+
 /* Merge Sort implementation in C  
 This code includes the merge function and the merge_sort function
 The merge function merges two halves of an array
@@ -75,8 +91,16 @@ int partition(int array[], int left, int right) {
         if (a > b) { temp = a; a = b; b = temp; }
         if (a > c) { temp = a; a = c; c = temp; }
         if (b > c) { temp = b; b = c; c = temp; }
-    
-        pivot = b; // Mediana dos três
+
+        pivot = b; // Median of three
+        
+        // Move the pivot to the rightmost position
+        // Find where the pivot value is and swap it with array[right]
+        if (array[left] == pivot) {
+            swap(&array[left], &array[right]);
+        } else if (array[left + 1] == pivot) {
+            swap(&array[left + 1], &array[right]);
+        }
     } else {
         pivot = array[right]; // fallback
     }
@@ -103,14 +127,64 @@ void quick_sort(int array[], int left, int right) {
     }
 }
 
-void swap(int* a, int* b) {
-    int temp = *a;
-    *a = *b;
-    *b = temp;
+
+/* Quick Sort with Insertion Sort */
+void insertion_sort(int array[], int size) {
+    for (int i = 1; i < size; i++) {
+        int key = array[i];
+        int j = i - 1;
+
+        while (j >= 0 && array[j] > key) {
+            array[j + 1] = array[j];
+            j--;
+        }
+        array[j + 1] = key;
+    }
+}
+
+void quick_sort_with_insertion(int array[], int left, int right) {
+    if (right - left < 5) { // Threshold for switching to insertion sort
+        insertion_sort(array + left, right - left + 1);
+    } else {
+        if (left < right) {
+            int pivot_index = partition(array, left, right);
+
+            quick_sort_with_insertion(array, left, pivot_index - 1);
+            quick_sort_with_insertion(array, pivot_index + 1, right);
+        }
+    }
 }
 
 int main() {
+    // Random array
+    int Array[] = {4, 7, 2, 3, 7, 9, 2, 1, 0, 3, 12, 14, 5, 3, 19, 0, 3, 6, 2, 1, 1, 7, 3, 2, 8, 6, 9}, copy[27];
     
+    copy_arrays(Array, copy, 27);
+
+    merge_sort(Array, 0, 26);
+    printf("Sorted array using Merge Sort:\n");
+    for (int i = 0; i < 27; i++) {
+        printf("%d ", Array[i]);
+    }
+    printf("\n");
+
+    copy_arrays(Array, copy, 27);
+
+    quick_sort(copy, 0, 26);
+    printf("Sorted array using Quick Sort:\n");
+    for (int i = 0; i < 27; i++) {
+        printf("%d ", copy[i]);
+    }
+    printf("\n");
+
+    copy_arrays(Array, copy, 27);
+
+    quick_sort_with_insertion(copy, 0, 26);	
+    printf("Sorted array using Quick Sort with Insertion Sort:\n");
+    for (int i = 0; i < 27; i++) {
+        printf("%d ", copy[i]);
+    }
+    printf("\n");
     
     return 0;
 }
