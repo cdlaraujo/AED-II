@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <limits.h>
 
+// Global counters for comparisons
+int merge_sort_comparisons = 0;
+int quick_sort_comparisons = 0;
+int quick_insertion_comparisons = 0;
+
 /*Helper functions*/
 
 // Swap function to swap two integers
@@ -18,11 +23,7 @@ void copy_arrays(int array[], int copy[], int size) {
     }
 }
 
-/* Merge Sort implementation in C  
-This code includes the merge function and the merge_sort function
-The merge function merges two halves of an array
-The merge_sort function recursively divides the array into halves and sorts them */
-
+/* Merge Sort implementation in C */
 void merge(int array[], int left, int middle, int right) {
     int left_size = middle - left + 1;
     int right_size = right - middle; 
@@ -31,7 +32,7 @@ void merge(int array[], int left, int middle, int right) {
     int* left_array = (int*)malloc((left_size + 1) * sizeof(int));
     int* right_array = (int*)malloc((right_size + 1) * sizeof(int));
 
-    // Copy data to temp arrays left_array[] and right_array[]
+    // Copy data to temp arrays
     for (int i = 0; i < left_size; i++)
         left_array[i] = array[left + i];
     for (int j = 0; j < right_size; j++)
@@ -46,6 +47,7 @@ void merge(int array[], int left, int middle, int right) {
 
     // The merging process
     for (int k = left; k <= right; k++) { 
+        merge_sort_comparisons++; // Count comparison
         if (left_array[left_index] <= right_array[right_index]) {
             array[k] = left_array[left_index];  
             left_index++;
@@ -70,26 +72,26 @@ void merge_sort(int array[], int left, int right) {
     }
 }
 
-/* Quick Sort implementation in C
-This code includes the partition function, the quick_sort function, and the swap function
-The partition function selects a pivot and places elements smaller than the pivot to its left
-The quick_sort function recursively divides the array and sorts them */
-
+/* Quick Sort implementation in C */
 int partition(int array[], int left, int right) {
     int pivot, tam;
 
     tam = right - left + 1; // Calculate the size of the array
     
     // Calculate the pivot manually 
-    if (tam >= 3) {
+    if (tam >= 2) {
         int temp, a, b, c;
         
         a = array[left];
-        b = array[left + 1];
-        c = array[left + 2];
+        b = array[left + (right - left) / 2];
+        c = array[right - 2];
     
+        // Compare for median-of-three
+        quick_sort_comparisons++; // a vs b
         if (a > b) { temp = a; a = b; b = temp; }
+        quick_sort_comparisons++; // a vs c
         if (a > c) { temp = a; a = c; c = temp; }
+        quick_sort_comparisons++; // b vs c
         if (b > c) { temp = b; b = c; c = temp; }
 
         pivot = b; // Median of three
@@ -98,8 +100,10 @@ int partition(int array[], int left, int right) {
         // Find where the pivot value is and swap it with array[right]
         if (array[left] == pivot) {
             swap(&array[left], &array[right]);
-        } else if (array[left + 1] == pivot) {
-            swap(&array[left + 1], &array[right]);
+        } else if (array[left + (right - left) / 2] == pivot) {
+            swap(&array[left + (right - left) / 2], &array[right]);
+        } else {
+            swap(&array[right], &array[right]);
         }
     } else {
         pivot = array[right]; // fallback
@@ -107,7 +111,8 @@ int partition(int array[], int left, int right) {
 
     int i = left - 1;  
 
-    for (int j = left; j < right; j++) {
+    for (int j = left; j < right; j++) { // The second condition is equal to < right
+        quick_sort_comparisons++; // Count comparison
         if (array[j] <= pivot) {
             i++;
             swap(&array[i], &array[j]);
@@ -127,64 +132,95 @@ void quick_sort(int array[], int left, int right) {
     }
 }
 
-
 /* Quick Sort with Insertion Sort */
 void insertion_sort(int array[], int size) {
     for (int i = 1; i < size; i++) {
         int key = array[i];
         int j = i - 1;
 
+        quick_insertion_comparisons++; // Count initial comparison
         while (j >= 0 && array[j] > key) {
             array[j + 1] = array[j];
             j--;
+            if (j >= 0) { // Only count if we're going to compare again
+                quick_insertion_comparisons++;
+            }
         }
+        
         array[j + 1] = key;
     }
 }
 
 void quick_sort_with_insertion(int array[], int left, int right) {
-    if (right - left < 5) { // Threshold for switching to insertion sort
+    if (right - left < 6) { // Threshold of 5 as in the original code
         insertion_sort(array + left, right - left + 1);
     } else {
         if (left < right) {
+            // We use the same partition function as quick_sort
             int pivot_index = partition(array, left, right);
-
+            // The comparisons in partition are already counted in quick_sort_comparisons
+            // We need to manually move those counts to quick_insertion_comparisons
+            quick_insertion_comparisons += quick_sort_comparisons;
+            quick_sort_comparisons = 0;
+            
             quick_sort_with_insertion(array, left, pivot_index - 1);
             quick_sort_with_insertion(array, pivot_index + 1, right);
         }
     }
 }
 
+// Function to print array
+void print_array(int array[], int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", array[i]);
+    }
+    printf("\n");
+}
+
 int main() {
-    // Random array
-    int Array[] = {4, 7, 2, 3, 7, 9, 2, 1, 0, 3, 12, 14, 5, 3, 19, 0, 3, 6, 2, 1, 1, 7, 3, 2, 8, 6, 9}, copy[27];
+    int n;
     
-    copy_arrays(Array, copy, 27);
-
-    merge_sort(Array, 0, 26);
-    printf("Sorted array using Merge Sort:\n");
-    for (int i = 0; i < 27; i++) {
-        printf("%d ", Array[i]);
+    // Read the number of elements
+    scanf("%d", &n);
+    
+    // Allocate memory for arrays
+    int* original_array = (int*)malloc(n * sizeof(int));
+    int* working_array = (int*)malloc(n * sizeof(int));
+    
+    // Read the elements
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &original_array[i]);
     }
-    printf("\n");
-
-    copy_arrays(Array, copy, 27);
-
-    quick_sort(copy, 0, 26);
-    printf("Sorted array using Quick Sort:\n");
-    for (int i = 0; i < 27; i++) {
-        printf("%d ", copy[i]);
-    }
-    printf("\n");
-
-    copy_arrays(Array, copy, 27);
-
-    quick_sort_with_insertion(copy, 0, 26);	
-    printf("Sorted array using Quick Sort with Insertion Sort:\n");
-    for (int i = 0; i < 27; i++) {
-        printf("%d ", copy[i]);
-    }
-    printf("\n");
+    
+    // Reset all counters to ensure accurate counting
+    merge_sort_comparisons = 0;
+    quick_sort_comparisons = 0;
+    quick_insertion_comparisons = 0;
+    
+    // Merge Sort
+    copy_arrays(original_array, working_array, n);
+    merge_sort(working_array, 0, n - 1);
+    print_array(working_array, n);
+    printf("%d\n", merge_sort_comparisons);
+    
+    // Quick Sort
+    copy_arrays(original_array, working_array, n);
+    quick_sort_comparisons = 0; // Reset counter
+    quick_sort(working_array, 0, n - 1);
+    print_array(working_array, n);
+    printf("%d\n", quick_sort_comparisons);
+    
+    // Quick Sort with Insertion Sort
+    copy_arrays(original_array, working_array, n);
+    quick_insertion_comparisons = 0; // Reset counter
+    quick_sort_comparisons = 0; // Reset this too as it's used in partition
+    quick_sort_with_insertion(working_array, 0, n - 1);
+    print_array(working_array, n);
+    printf("%d\n", quick_insertion_comparisons);
+    
+    // Free allocated memory
+    free(original_array);
+    free(working_array);
     
     return 0;
 }
