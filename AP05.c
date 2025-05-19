@@ -9,6 +9,59 @@ typedef struct Node {
     int balance;
 } Node;
 
+int height(Node* node) {
+    if (node == NULL) return 0;
+    int leftHeight = height(node->left);
+    int rightHeight = height(node->right);
+    return (leftHeight > rightHeight ? leftHeight : rightHeight) + 1;
+}
+
+int calculateAVLBalance(Node* node) {
+    if (node == NULL) return 0;
+    return height(node->left) - height(node->right);
+}
+
+void rotation(Node* node) {
+    int balance = calculateAVLBalance(*node);
+
+    if (balance > 1) {
+        // Left Left Case
+        if (calculateAVLBalance(node->left) > 0) {
+            // Perform right rotation
+            Node* temp = node->left;
+            node->left = temp->right;
+            temp->right = node;
+            node = temp;
+        } 
+        // Left Right Case
+        else {
+            Node* pB = node->left;
+            Node* pC = node->left->right;
+            pB->right = pC->left;
+            pC->left = pB;
+            node->left = pC->right;
+            pC->right = node;
+            node = pC;
+        }
+    } else {
+        if (calculateAVLBalance(node->right < 0)) {
+            Node* temp = node->right;
+            node->right = temp->left;
+            temp->left = node;
+            node = temp;
+        } else {
+            Node* pB = node->right;
+            Node* pC = node->right->left;
+            pB->left = pC->right;
+            pC->right = pB;
+            node->right = pC->left;
+            pC->left = node;
+            node = pC;
+        }
+    }
+    
+}
+    
 // Function to create a new node
 Node* createNode(int data) {
     Node* newNode = (Node*)malloc(sizeof(Node));
@@ -29,6 +82,8 @@ Node* insert(Node* root, int data) {
         root->right = insert(root->right, data);
     }
     return root;
+
+    
 }
 
 // Function to find the minimum value node in a tree
@@ -67,15 +122,6 @@ Node* removeNode(Node* root, int data) {
     return root;
 }
 
-// Function to perform in-order traversal
-void inOrderTraversal(Node* root) {
-    if (root != NULL) {
-        inOrderTraversal(root->left);
-        printf("%d ", root->data);
-        inOrderTraversal(root->right);
-    }
-}
-
 // Main function
 int main() {
     Node* root = NULL;
@@ -86,10 +132,6 @@ int main() {
     root = insert(root, 40);
     root = insert(root, 60);
     root = insert(root, 80);
-
-    printf("In-order traversal of the tree: ");
-    inOrderTraversal(root);
-    printf("\n");
 
     printf("Removing 20...\n");
     root = removeNode(root, 20);
